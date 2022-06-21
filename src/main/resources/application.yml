@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: otp-service
+  profiles:
+    active: dev
+  main:
+    banner-mode: off
+  boot:
+    admin:
+      context-path: /admin
+      client:
+        username: user
+        password: secret
+        url: http://localhost:7777/admin
+  #  cloud:
+  #    config:
+  #      uri: http://localhost:8888/config
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: http://localhost:8083/auth/realms/uj
+          jwk-set-uri: http://localhost:8083/auth/realms/uj/protocol/openid-connect/certs
+
+server:
+  port: 8081
+  servlet:
+    context-path: /otp
+
+management:
+  endpoints:
+    health:
+      show-details: always
+    web:
+      exposure:
+        include: "*"
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    preferIpAddress: false
+
+otp:
+  secret:
+    key: "ssshhhhhhhhhhh!!!!"
+
+communication:
+  base:
+    url: http://localhost:9999/communication
