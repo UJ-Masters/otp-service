@@ -24,4 +24,12 @@ public class OtpExceptionHandler {
                         HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handle(OtpExistsException ex) {
+        ErrorResponse error =
+                new ErrorResponse(new Date(),
+                        HttpStatus.CREATED.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CREATED);
+    }
 }

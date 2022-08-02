@@ -8,6 +8,9 @@ import com.masters.uj.otp.service.OtpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @CrossOrigin({"*"})
 public class OtpController {
@@ -28,8 +31,9 @@ public class OtpController {
 
     @PostMapping("/validate")
     @ResponseBody
-    public ValidateResponse validateOtp(@RequestBody ValidateRequest request) {
-        return otpService.validateOtp(request);
+    public ValidateResponse validateOtp(HttpServletRequest servletRequest, @RequestBody ValidateRequest request) {
+        boolean override = Boolean.parseBoolean(servletRequest.getHeader("Override"));
+        return otpService.validateOtp(request, override);
     }
 
 }

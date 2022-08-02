@@ -8,7 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
 
-public class AESUtil {
+public class  AESUtil {
 
     private static SecretKeySpec secretKey;
 
@@ -32,7 +32,9 @@ public class AESUtil {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
             return Base64.getEncoder()
-                    .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+                    .encodeToString(cipher
+                            .doFinal(strToEncrypt
+                                    .getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             System.out.println("Error while encrypting: " + e);
         }
@@ -44,7 +46,8 @@ public class AESUtil {
             setKey(secret);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
-            return new String(cipher.doFinal(Base64.getDecoder()
+            return new String(cipher
+                    .doFinal(Base64.getDecoder()
                     .decode(strToDecrypt)));
         } catch (Exception e) {
             System.out.println("Error while decrypting: " + e);

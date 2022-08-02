@@ -10,4 +10,9 @@ public class ValidateResponse {
     public void setResult(boolean result) {
         this.result = result;
     }
+
+    @Override
+    public String toString() {
+        return String.format("result => %s }", result);
+    }
 }

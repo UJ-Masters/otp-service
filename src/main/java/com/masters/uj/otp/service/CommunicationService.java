@@ -42,7 +42,7 @@ public class CommunicationService {
         this.responseMapper = responseMapper;
     }
 
-    public SendResponse sendEmail(SendRequest sendRequest) throws URISyntaxException {
+    public SendResponse sendEmail(SendRequest sendRequest, String otp) throws URISyntaxException {
 
         log.info("calling sendEmail");
 
@@ -53,12 +53,12 @@ public class CommunicationService {
         ResponseEntity<SendResponse> result = getResponse(uri, request);
 
         if (result.hasBody()) {
-            return responseMapper.map(Objects.requireNonNull(result.getBody()).isResult());
+            return responseMapper.map(Objects.requireNonNull(result.getBody()).isResult(), otp);
         }
         throw new SomethingWentWrongException("Failed to call Communication Service");
     }
 
-    public SendResponse sendSms(SendRequest sendRequest) throws URISyntaxException {
+    public SendResponse sendSms(SendRequest sendRequest, String otp) throws URISyntaxException {
 
         log.info("calling sendSms");
 
@@ -69,7 +69,7 @@ public class CommunicationService {
         ResponseEntity<SendResponse> result = getResponse(uri, request);
 
         if (result.hasBody()) {
-            return responseMapper.map(Objects.requireNonNull(result.getBody()).isResult());
+            return responseMapper.map(Objects.requireNonNull(result.getBody()).isResult(), otp);
         }
 
         throw new SomethingWentWrongException("Failed to call Communication Service");

@@ -1,35 +1,46 @@
 package com.masters.uj.otp.service;
 
+import com.masters.uj.otp.entity.Otp;
 import com.masters.uj.otp.exception.SomethingWentWrongException;
 import com.masters.uj.otp.model.DeliveryType;
 import com.masters.uj.otp.model.send.SendRequest;
 import com.masters.uj.otp.model.send.SendResponse;
 import com.masters.uj.otp.model.validate.ValidateRequest;
 import com.masters.uj.otp.model.validate.ValidateResponse;
+import com.masters.uj.otp.repo.OtpRepository;
+import com.masters.uj.otp.util.AESUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 
 import java.net.URISyntaxException;
-import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Random;
 
 @Component
 public class OtpService {
 
     private final Logger log = LoggerFactory.getLogger(OtpService.class);
-    private final HashMap<String, String> otpStorage;
 
     private final CommunicationService communicationService;
+    private final OtpRepository otpRepository;
+
+    // Using random method
+    private Random randomMethod = new Random();
+
+    @Value("${otp.secret.key}")
+    private String secret;
 
     @Autowired
-    public OtpService(CommunicationService communicationService) {
-        otpStorage = new HashMap<>();
+    public OtpService(final CommunicationService communicationService,
+                      final OtpRepository otpRepository) {
         this.communicationService = communicationService;
+        this.otpRepository = otpRepository;
     }
-
 
     private char[] generateOtp() {
 
@@ -38,31 +49,31 @@ public class OtpService {
         // Using numeric values
         String numbers = "0123456789";
 
-        // Using random method
-        Random random_method = new Random();
-
         char[] otp = new char[size];
 
         for (int i = 0; i < size; i++) {
             // Use of charAt() method : to get character value
             // Use of nextInt() as it is scanning the value as int
-            otp[i] =
-                    numbers.charAt(random_method.nextInt(numbers.length()));
+            otp[i] = numbers
+                    .charAt(randomMethod
+                            .nextInt(numbers.length()));
         }
         return otp;
     }
 
-    public SendResponse sendOtp(SendRequest request) {
-
+    public SendResponse sendOtp(final SendRequest request) {
         try {
             String otp = String.valueOf(generateOtp());
+            log.info("otp: {}", otp);
+            String eOtp = AESUtil.encrypt(otp, secret);
             request.setMessage(otp);
             if (request.getDeliveryType() == DeliveryType.E) {
-                otpStorage.put(request.getEmail(), otp);
-                return communicationService.sendEmail(request);
+                checkOtp(request.getEmail(), eOtp);
+                return communicationService.sendEmail(request, otp);
             }
-            otpStorage.put(request.getMobileNumber(), otp);
-            return communicationService.sendSms(request);
+            checkOtp(request.getMobileNumber(), eOtp);
+
+            return communicationService.sendSms(request, otp);
 
         } catch (URISyntaxException | RestClientException ex) {
             log.error(ex.getMessage());
@@ -71,28 +82,53 @@ public class OtpService {
             log.error(ex.getMessage());
             throw ex;
         }
-
     }
 
-    private boolean map(ValidateRequest request) {
-        if (DeliveryType.E == request.getDeliveryType()) {
-            if (otpStorage.get(request.getEmail()).equals(request.getOtp())) {
-                otpStorage.remove(request.getEmail());
-                return true;
+    public ValidateResponse validateOtp(final ValidateRequest request, boolean override) {
+        log.info("validating otp {}", request.getOtp());
+        ValidateResponse response = new ValidateResponse();
+
+        Optional<Otp> result;
+
+        if(!override){
+            if (request.getDeliveryType() == DeliveryType.E) {
+                result = otpRepository.findById(request.getEmail());
+                if(result.isPresent()){
+                    otpRepository.deleteById(request.getEmail());
+                }
+            } else {
+                result = otpRepository.findById(request.getMobileNumber());
+                if(result.isPresent()){
+                    otpRepository.deleteById(request.getMobileNumber());
+                }
             }
+            response.setResult(map(result, request));
+        }else{
+            response.setResult(true);
         }
 
-        if (otpStorage.get(request.getMobileNumber()).equals(request.getOtp())) {
-            otpStorage.remove(request.getMobileNumber());
-            return true;
+        log.info(response.toString());
+        return response;
+    }
+
+    private boolean map(final Optional<Otp> result, final ValidateRequest request) {
+        if (result.isPresent()) {
+            String dOtp = AESUtil.decrypt(result.get().getCode(), secret);
+
+            if (request.getOtp().equals(dOtp)) {
+                return true;
+            }
         }
         return false;
     }
 
-    public ValidateResponse validateOtp(ValidateRequest request) {
-        ValidateResponse response = new ValidateResponse();
-        response.setResult(map(request));
-        return response;
+    private void checkOtp(String deliveryAddress, String eOtp) {
+        Optional<Otp> result = otpRepository.findById(deliveryAddress);
+        if (result.isPresent()) {
+            otpRepository.deleteById(deliveryAddress);
+        } else {
+            otpRepository.save(new Otp(deliveryAddress, eOtp, LocalDateTime.now()));
+        }
     }
 
 }
