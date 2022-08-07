@@ -28,9 +28,9 @@ COPY . .
 RUN mvn package
 
 # Inject the JAR file into a new container to keep the file small
-FROM openjdk:8-jre-alpine
+FROM openjdk:11
 WORKDIR /app
-COPY --from=build /app/target/otp-service-1.0.0-SNAPSHOT.jar /app/app.jar
+COPY --from=build /app/target/otp-service-0.0.1-SNAPSHOT.jar /app/app.jar
 EXPOSE 8080
 ENTRYPOINT ["sh", "-c"]
 
