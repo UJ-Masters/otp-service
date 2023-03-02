@@ -23,14 +23,13 @@ import java.util.Random;
 
 @Component
 public class OtpService {
-
     private final Logger log = LoggerFactory.getLogger(OtpService.class);
 
     private final CommunicationService communicationService;
     private final OtpRepository otpRepository;
 
     // Using random method
-    private Random randomMethod = new Random();
+    private final Random randomMethod = new Random();
 
     @Value("${otp.secret.key}")
     private String secret;
@@ -115,9 +114,7 @@ public class OtpService {
         if (result.isPresent()) {
             String dOtp = AESUtil.decrypt(result.get().getCode(), secret);
 
-            if (request.getOtp().equals(dOtp)) {
-                return true;
-            }
+            return request.getOtp().equals(dOtp);
         }
         return false;
     }
